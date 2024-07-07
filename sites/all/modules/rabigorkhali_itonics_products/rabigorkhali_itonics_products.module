@@ -308,6 +308,9 @@ Back to Listing';
 }
 
 /* setting up edit form html and data */
+/**
+ * Form builder for editing Itonics Products.
+ */
 function rabigorkhali_itonics_products_edit_form($form, &$form_state)
 {
     $id = arg(3);
@@ -356,7 +359,7 @@ function rabigorkhali_itonics_products_edit_form($form, &$form_state)
     $form['rabigorkhali_itonics_products_category'] = array(
         '#type' => 'select',
         '#title' => t('Category'),
-        '#default_value' => $record->category,
+        '#default_value' => $record->category ? unserialize($record->category) : array(),
         '#options' => $categories,
         '#multiple' => TRUE,
         '#required' => TRUE,
@@ -399,7 +402,15 @@ function rabigorkhali_itonics_products_edit_form($form, &$form_state)
         '#description' => t('Date when the Itonics Product expires.'),
     );
 
-    // Image display
+    // Image upload field
+    $form['rabigorkhali_itonics_products_image'] = array(
+        '#type' => 'file',
+        '#title' => t('Product Image'),
+        '#description' => t('Upload a new image for the Itonics Product.'),
+        '#upload_location' => 'public://products/', // Adjust upload directory as needed
+    );
+
+    // Display current image if exists
     if (!empty($record->image)) {
         $file = file_load($record->image);
         $image_output = theme('image_style', array(
@@ -408,8 +419,18 @@ function rabigorkhali_itonics_products_edit_form($form, &$form_state)
             'alt' => $file->filename,
             'title' => $file->filename,
         ));
-        $form['rabigorkhali_itonics_products_image'] = array(
+        $form['current_image'] = array(
             '#markup' => $image_output,
+            '#prefix' => '<div id="current-image">',
+            '#suffix' => '</div>',
+        );
+
+        // Add checkbox to delete current image
+        $form['delete_image'] = array(
+            '#type' => 'checkbox',
+            '#title' => t('Delete Current Image'),
+            '#default_value' => FALSE,
+            '#description' => t('Check this box if you want to delete the current image.'),
         );
     }
 
@@ -441,31 +462,124 @@ function rabigorkhali_itonics_products_edit_form($form, &$form_state)
 
 
 
+
 /* this function saves the data in db in update action */
 
+/**
+ * Submit handler for editing Itonics Products.
+ */
 function rabigorkhali_itonics_products_edit_submit_handler($form, &$form_state)
 {
-    $error = 1;
-    if (!isset($form_state['values']['rabigorkhali_itonics_products_title']) || !isset($form_state['values']['rabigorkhali_itonics_products_title'])) {
-        $error = 0;
+    $error = FALSE;
+    // Check if required fields are set and not empty
+    if (
+        !isset($form_state['values']['rabigorkhali_itonics_products_title']) || empty($form_state['values']['rabigorkhali_itonics_products_title']) ||
+        !isset($form_state['values']['rabigorkhali_itonics_products_description']) || empty($form_state['values']['rabigorkhali_itonics_products_description']) ||
+        !isset($form_state['values']['rabigorkhali_itonics_products_summary']) || empty($form_state['values']['rabigorkhali_itonics_products_summary']) ||
+        !isset($form_state['values']['rabigorkhali_itonics_products_category']) || empty($form_state['values']['rabigorkhali_itonics_products_category']) ||
+        !isset($form_state['values']['rabigorkhali_itonics_products_type']) || empty($form_state['values']['rabigorkhali_itonics_products_type']) ||
+        !isset($form_state['values']['rabigorkhali_itonics_products_owner_email']) || empty($form_state['values']['rabigorkhali_itonics_products_owner_email'])
+    ) {
+        $error = TRUE;
     }
-
-    if ($error) {
+    if (!$error) {
         $id = $form_state['values']['id'];
-        //var_dump($form_state);
-        $rabigorkhali_itonics_products_title = $form_state['input']['rabigorkhali_itonics_products_title'];
-        $rabigorkhali_itonics_products_description = $form_state['input']['rabigorkhali_itonics_products_description'];
+        $rabigorkhali_itonics_products_title = $form_state['values']['rabigorkhali_itonics_products_title'];
+        $rabigorkhali_itonics_products_description = $form_state['values']['rabigorkhali_itonics_products_description'];
+        $rabigorkhali_itonics_products_summary = $form_state['values']['rabigorkhali_itonics_products_summary'];
+        $rabigorkhali_itonics_products_category = $form_state['values']['rabigorkhali_itonics_products_category'];
+        $rabigorkhali_itonics_products_type = $form_state['values']['rabigorkhali_itonics_products_type'];
+        $rabigorkhali_itonics_products_owner_email = $form_state['values']['rabigorkhali_itonics_products_owner_email'];
+        $rabigorkhali_itonics_products_expiry_date = !empty($form_state['values']['rabigorkhali_itonics_products_expiry_date']) ? strtotime($form_state['values']['rabigorkhali_itonics_products_expiry_date']) : NULL;
+
+        // Check if expiry date is valid
+        if ($rabigorkhali_itonics_products_expiry_date === FALSE || $rabigorkhali_itonics_products_expiry_date === NULL) {
+            drupal_set_message(t('Error: Invalid expiry date format.'), 'error');
+            // return;
+        }
+
+        // Format the expiry date for database insertion
+        $formatted_expiry_date = date('Y-m-d', $rabigorkhali_itonics_products_expiry_date);
+
+        // Update data array
         $data = array(
             'title' => $rabigorkhali_itonics_products_title,
             'description' => $rabigorkhali_itonics_products_description,
+            'summary' => $rabigorkhali_itonics_products_summary,
+            'category' => serialize($rabigorkhali_itonics_products_category), // Serialize for multiple values
+            'type' => $rabigorkhali_itonics_products_type,
+            'owner_email' => $rabigorkhali_itonics_products_owner_email,
+            'expiry_date' => $formatted_expiry_date,
         );
+
+        // Handle image update if file is uploaded
+        if (!empty($form['rabigorkhali_itonics_products_image'])) {
+            $file = file_save_upload('rabigorkhali_itonics_products_image', array(
+                'file_validate_is_image' => array(), // Ensure it's an image file
+                'file_validate_extensions' => array('png gif jpg jpeg'), // Allowed file types
+            ));
+
+            if ($file) {
+                // Save the file
+                if ($file = file_move($file, 'public://products/')) {
+                    $data['image'] = $file->fid;
+
+                    // Delete old image if checkbox is checked
+                    if (!empty($form_state['values']['delete_image'])) {
+                        file_delete(file_load($record->image));
+                        $data['image'] = NULL; // Reset image field in database
+                    }
+                }
+            }
+        }
+        //delete
+        if (!empty($form_state['values']['rabigorkhali_itonics_products_image'])) {
+            $file = file_save_upload('rabigorkhali_itonics_products_image', array(
+                'file_validate_is_image' => array(), // Ensure it's an image file
+                'file_validate_extensions' => array('png gif jpg jpeg'), // Allowed file types
+            ));
+
+            if ($file) {
+                // Save the file
+                if ($file = file_move($file, 'public://products/')) {
+                    $data['image'] = $file->fid;
+
+                    // Delete old image if checkbox is checked
+                    if (!empty($form_state['values']['delete_image'])) {
+                        // Load the record again to get the current image fid
+                        $result = db_query('SELECT image FROM {rabigorkhali_itonics_products} WHERE id = :id', array(':id' => $id));
+                        $record = $result->fetchObject();
+                        if ($record && isset($record->image)) {
+                            file_delete(file_load($record->image));
+                            $data['image'] = NULL; // Reset image field in database
+                        }
+                    }
+                }
+            }
+        } elseif (!empty($form_state['values']['delete_image'])) {
+            // Delete old image if only checkbox is checked without new upload
+            // Load the record again to get the current image fid
+            $result = db_query('SELECT image FROM {rabigorkhali_itonics_products} WHERE id = :id', array(':id' => $id));
+            $record = $result->fetchObject();
+            if ($record && isset($record->image)) {
+                file_delete(file_load($record->image));
+                $data['image'] = NULL; // Reset image field in database
+            }
+        }
+        //end delete
+
+        // Update database
         $num_updated = db_update('rabigorkhali_itonics_products')
             ->fields($data)
-            ->condition('id', $id, '=')
+            ->condition('id', $id)
             ->execute();
-        drupal_set_message(t('Record has been Updated!'));
+
+        drupal_set_message(t('Record has been updated!'));
+    } else {
+        drupal_set_message(t('Error: Please fill in all required fields.'), 'error');
     }
 }
+
 
 /**
  * Implements hook_permission().
