@@ -50,7 +50,7 @@ function rabigorkhali_itonics_products_menu()
 }
 
 /**
- * Implements hook_block_view().
+ * Implements hook_block_view().  
  */
 function rabigorkhali_itonics_products_block_view($block_name = "")
 {
@@ -63,7 +63,6 @@ function rabigorkhali_itonics_products_block_view($block_name = "")
 
     $form = drupal_get_form('rabigorkhali_itonics_products_form');
     $block = array(
-        // 'subject' => t('Subject'),
         'content' => $form,
     );
     return $block;
@@ -80,24 +79,72 @@ function rabigorkhali_itonics_products_form($form, &$form_state)
         '#maxlength' => 120,
         '#required' => TRUE,
     );
+    $form['rabigorkhali_itonics_products_image'] = array(
+        '#type' => 'managed_file',
+        '#title' => t('Image'),
+        '#upload_location' => 'public://rabigorkhali_itonics_products/',
+    );
 
-    // Textarea for the body
-    $form['rabigorkhali_itonics_products_description'] = array(
+    $form['rabigorkhali_itonics_products_summary'] = array(
         '#type' => 'textarea',
-        '#rows' => 10,
-        '#columns' => 40,
-        '#title' => t('Description'),
-        '#required' => TRUE,
-        '#description' => t('The text of Itonics Products .'),
+        '#rows' => 5,
+        '#title' => t('Summary'),
+        '#description' => t('A brief summary of the ITONICS Product.'),
     );
 
-    // Checkbox to indicate.
-    $form['my_custom_active'] = array(
-        '#type' => 'checkbox',
-        '#title' => t('Status'),
-        '#description' => t("Indicates whether the active or inactive."),
+    // Text Format for the Description (using WYSIWYG)
+    $form['rabigorkhali_itonics_products_description'] = array(
+        '#type' => 'text_format',
+        '#title' => t('Description'),
+        '#format' => 'full_html',
+        '#required' => TRUE,
+        '#description' => t('The detailed description of the ITONICS Product using rich text formatting.'),
     );
-    // now I add also a button
+
+    // Select List for Category (multi-select)
+    $form['rabigorkhali_itonics_products_category'] = array(
+        '#type' => 'select',
+        '#title' => t('Category'),
+        '#options' => array(
+            'Category 1' => 'Category 1',
+            'Category 2' => 'Category 2',
+            'Category 3' => 'Category 3',
+        ),
+        '#multiple' => TRUE,
+        '#required' => TRUE,
+        '#description' => t('Select one or more categories for the ITONICS Product.'),
+    );
+
+    // Radios for Type (single select)
+    $form['rabigorkhali_itonics_products_type'] = array(
+        '#type' => 'radios',
+        '#title' => t('Type'),
+        '#options' => array(
+            'Type 1' => 'Type 1',
+            'Type 2' => 'Type 2',
+            'Type 3' => 'Type 3',
+        ),
+        '#required' => TRUE,
+        '#description' => t('Select the type of the ITONICS Product.'),
+    );
+
+    // Textfield for Owner Email
+    $form['rabigorkhali_itonics_products_owner_email'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Owner Email'),
+        '#size' => 40,
+        '#maxlength' => 255,
+        '#required' => TRUE,
+        '#description' => t('Enter the email address of the product owner.'),
+    );
+
+    // Date Popup for Expiry Date
+    $form['rabigorkhali_itonics_products_expiry_date'] = array(
+        '#type' => 'date_popup',
+        '#title' => t('Expiry Date'),
+        '#date_format' => 'Y-m-d',
+        '#description' => t('Select the expiry date of the ITONICS Product.'),
+    );
     $form['submit'] = array(
         '#type' => 'submit',
         '#value' => t('Save'),
@@ -120,28 +167,60 @@ function rabigorkhali_itonics_products_submit_handler($form, &$form_state)
     }
 
     if ($error) {
+        $file = file_save_upload('rabigorkhali_itonics_products_image', array(
+            'file_validate_is_image' => array(),
+            'file_validate_extensions' => array('png gif jpg jpeg'),
+        ));
+
+        if ($file) {
+            // File uploaded successfully
+            $fid = $file->fid;
+        } else {
+            // Handle file upload error (if needed)
+            $fid = 0; // Default value or error handling as required
+        }
         $rabigorkhali_itonics_products_title = $form_state['values']['rabigorkhali_itonics_products_title'];
-        $rabigorkhali_itonics_products_description = $form_state['values']['rabigorkhali_itonics_products_description'];
-        $nid = db_insert('rabigorkhali_itonics_products') // Table name no longer needs {}
+        $rabigorkhali_itonics_products_description = $form_state['values']['rabigorkhali_itonics_products_description']['value']; // Extract the value from the text_format element
+        $rabigorkhali_itonics_products_summary = $form_state['values']['rabigorkhali_itonics_products_summary'];
+        $rabigorkhali_itonics_products_category = implode(', ', array_keys($form_state['values']['rabigorkhali_itonics_products_category'])); // Convert array to comma-separated string
+        $rabigorkhali_itonics_products_type = $form_state['values']['rabigorkhali_itonics_products_type'];
+        $rabigorkhali_itonics_products_owner_email = $form_state['values']['rabigorkhali_itonics_products_owner_email'];
+
+        // Insert into the database
+        $nid = db_insert('rabigorkhali_itonics_products')
             ->fields(array(
                 'title' => $rabigorkhali_itonics_products_title,
                 'description' => $rabigorkhali_itonics_products_description,
+                'summary' => $rabigorkhali_itonics_products_summary,
+                'category' => $rabigorkhali_itonics_products_category,
+                'type' => $rabigorkhali_itonics_products_type,
+                'owner_email' => $rabigorkhali_itonics_products_owner_email,
+                'image' => $fid, // Assuming 'image_fid' is the column name for storing file IDs
             ))
             ->execute();
         drupal_set_message(t('Record has been added!'));
     }
 }
+
+/* pass data to edit form */
 function rabigorkhali_itonics_products_sort_with_pager_content()
 {
     $header = array(
         array('data' => t('Custom id'), 'field' => 'id', 'sort' => 'asc'),
         array('data' => t('Title'), 'field' => 'title'),
+        array('data' => t('Description'), 'field' => 'description'),
+        array('data' => t('Summary'), 'field' => 'summary'),
+        array('data' => t('Category'), 'field' => 'category'),
+        array('data' => t('Type'), 'field' => 'type'),
+        array('data' => t('Owner Email'), 'field' => 'owner_email'),
+        array('data' => t('Expiry Date'), 'field' => 'expiry_date'),
+        array('data' => t('Image'), 'field' => 'image'),
         array('data' => t('Status'), 'field' => 'status'),
         array('data' => t('Action')),
     );
 
     $query = db_select('rabigorkhali_itonics_products', 'c');
-    $query->fields('c', array('id', 'title', 'status'));
+    $query->fields('c', array('id', 'title', 'description', 'summary', 'category', 'type', 'owner_email', 'expiry_date', 'image', 'status'));
 
     $table_sort = $query->extend('TableSort') // Add table sort extender.
         ->orderByHeader($header); // Add order by headers.
@@ -151,10 +230,29 @@ function rabigorkhali_itonics_products_sort_with_pager_content()
 
     $rows = array();
     foreach ($result as $res) {
+        // Prepare image output
+        $image_output = '';
+        if (!empty($res->image)) {
+            $file = file_load($res->image);
+            $image_output = theme('image_style', array(
+                'style_name' => 'thumbnail', // Adjust image style as needed
+                'path' => $file->uri,
+                'alt' => $file->filename,
+                'title' => $file->filename,
+            ));
+        }
+
         $rows[] = array(
             'data' => array(
                 $res->id,
                 $res->title,
+                $res->description,
+                $res->summary,
+                $res->category,
+                $res->type,
+                $res->owner_email,
+                date('Y-m-d', $res->expiry_date), // Assuming expiry_date is stored as Unix timestamp
+                $image_output,
                 $res->status,
                 l('Edit', 'admin/itonics/products/' . $res->id . '/edit') . ' | ' . l('Delete', 'admin/itonics/products/' . $res->id . '/delete')
             )
@@ -209,67 +307,144 @@ Back to Listing';
     return $block;
 }
 
+/* setting up edit form html and data */
 function rabigorkhali_itonics_products_edit_form($form, &$form_state)
 {
-
     $id = arg(3);
     $result = db_query('SELECT * FROM {rabigorkhali_itonics_products} WHERE id = :tid', array(':tid' => $id));
-    /* foreach($result as $val){
-$record = $val;
-}*/
     $record = $result->fetchObject();
 
-    // now I add a text field to the form
-    // with a label and fixed dimensions (you never know…)
     $form['rabigorkhali_itonics_products_title'] = array(
         '#type' => 'textfield',
         '#title' => t('Title'),
-        '#value' => t($record->title),
+        '#default_value' => $record->title,
         '#description' => t('The Title of the Itonics Products.'),
         '#size' => 40,
         '#maxlength' => 120,
         '#required' => TRUE,
     );
 
-    // Textarea for the body
+    // Textarea for the description
     $form['rabigorkhali_itonics_products_description'] = array(
         '#type' => 'textarea',
         '#rows' => 10,
         '#columns' => 40,
         '#title' => t('Description'),
-        '#value' => t($record->description),
+        '#default_value' => $record->description,
         '#required' => TRUE,
-        '#description' => t('The text of Itonics Products .'),
-    );
-    // hidden for the body
-    $form['id'] = array(
-        '#type' => 'hidden',
-        '#value' => t($id),
+        '#description' => t('The text of Itonics Products.'),
     );
 
-    // Checkbox to indicate.
-    $form['my_custom_active'] = array(
+    // Summary field
+    $form['rabigorkhali_itonics_products_summary'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Summary'),
+        '#default_value' => $record->summary,
+        '#description' => t('A summary of the Itonics Product.'),
+        '#size' => 60,
+        '#maxlength' => 255,
+        '#required' => TRUE,
+    );
+
+    // Category select list
+    // Example options - replace with your actual category options
+    $categories = array(
+        'Category 1' => 'Category 1',
+        'Category 2' => 'Category 2',
+        'Category 3' => 'Category 3',
+    );
+    $form['rabigorkhali_itonics_products_category'] = array(
+        '#type' => 'select',
+        '#title' => t('Category'),
+        '#default_value' => $record->category,
+        '#options' => $categories,
+        '#multiple' => TRUE,
+        '#required' => TRUE,
+        '#description' => t('Select categories for the Itonics Product.'),
+    );
+
+    // Type radio buttons
+    // Example options - replace with your actual type options
+    $types = array(
+        'Type 1' => 'Type 1',
+        'Type 2' => 'Type 2',
+        'Type 3' => 'Type 3',
+    );
+    $form['rabigorkhali_itonics_products_type'] = array(
+        '#type' => 'radios',
+        '#title' => t('Type'),
+        '#default_value' => $record->type,
+        '#options' => $types,
+        '#required' => TRUE,
+        '#description' => t('Select type for the Itonics Product.'),
+    );
+
+    // Owner Email textfield
+    $form['rabigorkhali_itonics_products_owner_email'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Owner Email'),
+        '#default_value' => $record->owner_email,
+        '#size' => 40,
+        '#maxlength' => 255,
+        '#required' => TRUE,
+        '#description' => t('Email address of the owner of the Itonics Product.'),
+    );
+
+    // Expiry Date datepicker
+    $form['rabigorkhali_itonics_products_expiry_date'] = array(
+        '#type' => 'date',
+        '#title' => t('Expiry Date'),
+        '#default_value' => date('Y-m-d', $record->expiry_date), // Assuming expiry_date is stored as Unix timestamp
+        '#required' => TRUE,
+        '#description' => t('Date when the Itonics Product expires.'),
+    );
+
+    // Image display
+    if (!empty($record->image)) {
+        $file = file_load($record->image);
+        $image_output = theme('image_style', array(
+            'style_name' => 'thumbnail', // Adjust image style as needed
+            'path' => $file->uri,
+            'alt' => $file->filename,
+            'title' => $file->filename,
+        ));
+        $form['rabigorkhali_itonics_products_image'] = array(
+            '#markup' => $image_output,
+        );
+    }
+
+    // Hidden ID field
+    $form['id'] = array(
+        '#type' => 'hidden',
+        '#value' => $id,
+    );
+
+    // Checkbox for status
+    $form['rabigorkhali_itonics_products_status'] = array(
         '#type' => 'checkbox',
         '#title' => t('Status'),
-        '#description' => t("Indicates whether the active or inactive."),
+        '#default_value' => $record->status,
+        '#description' => t('Indicates whether the Itonics Product is active or inactive.'),
     );
-    // now I add also a button
+
+    // Submit button
     $form['submit'] = array(
         '#type' => 'submit',
         '#value' => t('Save'),
     );
-    // and now I assign a my function as handler of the submit event
-    // $form['#validate'][] = 'rabigorkhali_itonics_products_submit_handler';
+
+    // Submit handler
     $form['#submit'][] = 'rabigorkhali_itonics_products_edit_submit_handler';
+
     return $form;
 }
 
+
+
+/* this function saves the data in db in update action */
+
 function rabigorkhali_itonics_products_edit_submit_handler($form, &$form_state)
 {
-    // this function will be executed after the click
-    // event of the user on the “submit” button.
-    // here I only print a message
-    // you can access a database, redirect, or whatever you want, obviously
     $error = 1;
     if (!isset($form_state['values']['rabigorkhali_itonics_products_title']) || !isset($form_state['values']['rabigorkhali_itonics_products_title'])) {
         $error = 0;
