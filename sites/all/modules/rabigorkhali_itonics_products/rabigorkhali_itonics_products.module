@@ -1,0 +1,311 @@
+<?php
+
+/**
+ * @file
+ * Custom functions for this site.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function rabigorkhali_itonics_products_menu()
+{
+
+    $items['admin/itonics/products/add'] = array(
+        'title' => 'Itonics Products',
+        'description' => 'View Itonics Products.',
+        'page callback' => 'rabigorkhali_itonics_products_block_view',
+        'access arguments' => array('access rabigorkhali_itonics_products'),
+        'weight' => -14,
+    );
+
+    $items['admin/itonics/products/%/edit'] = array(
+        'title' => 'Itonics Products',
+        'description' => 'View Itonics Products.',
+        'page callback' => 'rabigorkhali_itonics_products_edit_block_view',
+        'page argument' => array(3),
+        'access arguments' => array('access rabigorkhali_itonics_products'),
+        'weight' => -14,
+    );
+
+    $items['admin/itonics/products/%/delete'] = array(
+        'title' => 'Itonics Products',
+        'description' => 'View Itonics Products.',
+        'page callback' => 'my_custom_delete',
+        'page argument' => array(3),
+        'access arguments' => array('access rabigorkhali_itonics_products'),
+        'weight' => -14,
+    );
+
+    $items['admin/itonics/products'] = array(
+        'title' => 'Itonics Products',
+        'description' => 'View Itonics Products.',
+        'page callback' => 'rabigorkhali_itonics_products_sort_with_pager_content',
+        'access arguments' => array('access rabigorkhali_itonics_products'),
+        'weight' => -14,
+    );
+    return $items;
+
+    // return $items;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function rabigorkhali_itonics_products_block_view($block_name = "")
+{
+
+    // in my example I show the form only in the front page.
+    // You can show it where you want, obviously
+    if (drupal_is_front_page()) {
+        return NULL;
+    }
+
+    $form = drupal_get_form('rabigorkhali_itonics_products_form');
+    $block = array(
+        // 'subject' => t('Subject'),
+        'content' => $form,
+    );
+    return $block;
+}
+
+function rabigorkhali_itonics_products_form($form, &$form_state)
+{
+    // now I add a text field to the form
+    $form['rabigorkhali_itonics_products_title'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Title'),
+        '#description' => t('The Title of the Itonics Products.'),
+        '#size' => 40,
+        '#maxlength' => 120,
+        '#required' => TRUE,
+    );
+
+    // Textarea for the body
+    $form['rabigorkhali_itonics_products_description'] = array(
+        '#type' => 'textarea',
+        '#rows' => 10,
+        '#columns' => 40,
+        '#title' => t('Description'),
+        '#required' => TRUE,
+        '#description' => t('The text of Itonics Products .'),
+    );
+
+    // Checkbox to indicate.
+    $form['my_custom_active'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Status'),
+        '#description' => t("Indicates whether the active or inactive."),
+    );
+    // now I add also a button
+    $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Save'),
+    );
+    // and now I assign a my function as handler of the submit event
+    // $form['#validate'][] = 'rabigorkhali_itonics_products_submit_handler';
+    $form['#submit'][] = 'rabigorkhali_itonics_products_submit_handler';
+    return $form;
+}
+
+function rabigorkhali_itonics_products_submit_handler($form, &$form_state)
+{
+    // this function will be executed after the click
+    // event of the user on the “submit” button.
+    // here I only print a message
+    // you can access a database, redirect, or whatever you want, obviously
+    $error = 1;
+    if (!isset($form_state['values']['rabigorkhali_itonics_products_title']) || !isset($form_state['values']['rabigorkhali_itonics_products_title'])) {
+        $error = 0;
+    }
+
+    if ($error) {
+        $rabigorkhali_itonics_products_title = $form_state['values']['rabigorkhali_itonics_products_title'];
+        $rabigorkhali_itonics_products_description = $form_state['values']['rabigorkhali_itonics_products_description'];
+        $nid = db_insert('rabigorkhali_itonics_products') // Table name no longer needs {}
+            ->fields(array(
+                'title' => $rabigorkhali_itonics_products_title,
+                'description' => $rabigorkhali_itonics_products_description,
+            ))
+            ->execute();
+        drupal_set_message(t('Record has been added!'));
+    }
+}
+function rabigorkhali_itonics_products_sort_with_pager_content()
+{
+    $header = array(
+        array('data' => t('Custom id'), 'field' => 'id', 'sort' => 'asc'),
+        array('data' => t('Title'), 'field' => 'title'),
+        array('data' => t('Status'), 'field' => 'status'),
+        array('data' => t('Action')),
+    );
+
+    $query = db_select('rabigorkhali_itonics_products', 'c');
+    $query->fields('c', array('id', 'title', 'status'));
+
+    $table_sort = $query->extend('TableSort') // Add table sort extender.
+        ->orderByHeader($header); // Add order by headers.
+    $pager = $table_sort->extend('PagerDefault')
+        ->limit(5);
+    $result = $pager->execute();
+
+    $rows = array();
+    foreach ($result as $res) {
+        $rows[] = array(
+            'data' => array(
+                $res->id,
+                $res->title,
+                $res->status,
+                l('Edit', 'admin/itonics/products/' . $res->id . '/edit') . ' | ' . l('Delete', 'admin/itonics/products/' . $res->id . '/delete')
+            )
+        );
+    }
+
+    // If rows are not empty theme and display the rows.
+    if (!empty($rows)) {
+        $output = theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('id' => 'sort-table')));
+        $output .= theme('pager');
+    } else {
+        $output = t("No results found.");
+    }
+
+    // Add new record link
+    $output .= l(t('Add new record'), 'admin/itonics/products/add', array('attributes' => array('class' => array('button'))));
+
+    return $output;
+}
+
+
+
+function my_custom_delete()
+{
+    $id = arg(3);
+    $num_updated = db_delete('rabigorkhali_itonics_products')
+        ->condition('id', $id, '=')
+        ->execute();
+    drupal_set_message(t('Record has been deleted!'));
+    drupal_goto("admin/itonics/products/");
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function rabigorkhali_itonics_products_edit_block_view($block_name = "")
+{
+
+    // in my example I show the form only in the front page.
+    // You can show it where you want, obviously
+    if (drupal_is_front_page()) {
+        return NULL;
+    }
+
+    $form = drupal_get_form('rabigorkhali_itonics_products_edit_form');
+    $block = array(
+        // 'subject' => t('Subject'),
+        'content' => $form,
+    );
+    $block['content'][] .= '
+Back to Listing';
+    return $block;
+}
+
+function rabigorkhali_itonics_products_edit_form($form, &$form_state)
+{
+
+    $id = arg(3);
+    $result = db_query('SELECT * FROM {rabigorkhali_itonics_products} WHERE id = :tid', array(':tid' => $id));
+    /* foreach($result as $val){
+$record = $val;
+}*/
+    $record = $result->fetchObject();
+
+    // now I add a text field to the form
+    // with a label and fixed dimensions (you never know…)
+    $form['rabigorkhali_itonics_products_title'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Title'),
+        '#value' => t($record->title),
+        '#description' => t('The Title of the Itonics Products.'),
+        '#size' => 40,
+        '#maxlength' => 120,
+        '#required' => TRUE,
+    );
+
+    // Textarea for the body
+    $form['rabigorkhali_itonics_products_description'] = array(
+        '#type' => 'textarea',
+        '#rows' => 10,
+        '#columns' => 40,
+        '#title' => t('Description'),
+        '#value' => t($record->description),
+        '#required' => TRUE,
+        '#description' => t('The text of Itonics Products .'),
+    );
+    // hidden for the body
+    $form['id'] = array(
+        '#type' => 'hidden',
+        '#value' => t($id),
+    );
+
+    // Checkbox to indicate.
+    $form['my_custom_active'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Status'),
+        '#description' => t("Indicates whether the active or inactive."),
+    );
+    // now I add also a button
+    $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Save'),
+    );
+    // and now I assign a my function as handler of the submit event
+    // $form['#validate'][] = 'rabigorkhali_itonics_products_submit_handler';
+    $form['#submit'][] = 'rabigorkhali_itonics_products_edit_submit_handler';
+    return $form;
+}
+
+function rabigorkhali_itonics_products_edit_submit_handler($form, &$form_state)
+{
+    // this function will be executed after the click
+    // event of the user on the “submit” button.
+    // here I only print a message
+    // you can access a database, redirect, or whatever you want, obviously
+    $error = 1;
+    if (!isset($form_state['values']['rabigorkhali_itonics_products_title']) || !isset($form_state['values']['rabigorkhali_itonics_products_title'])) {
+        $error = 0;
+    }
+
+    if ($error) {
+        $id = $form_state['values']['id'];
+        //var_dump($form_state);
+        $rabigorkhali_itonics_products_title = $form_state['input']['rabigorkhali_itonics_products_title'];
+        $rabigorkhali_itonics_products_description = $form_state['input']['rabigorkhali_itonics_products_description'];
+        $data = array(
+            'title' => $rabigorkhali_itonics_products_title,
+            'description' => $rabigorkhali_itonics_products_description,
+        );
+        $num_updated = db_update('rabigorkhali_itonics_products')
+            ->fields($data)
+            ->condition('id', $id, '=')
+            ->execute();
+        drupal_set_message(t('Record has been Updated!'));
+    }
+}
+
+/**
+ * Implements hook_permission().
+ */
+function rabigorkhali_itonics_products_permission()
+{
+    return array(
+        'access rabigorkhali_itonics_products' => array(
+            'title' => t('View Itonics Products'),
+            // Note: We translate the 'Administer blocks' permission string here with
+            // a separate t() call, to make sure it gets the same translation as when
+            // it's in block_permission().
+            'description' => t('Customizing the Itonics Products requires the !permission-name permission.', array(
+                '!permission-name' => l(t('Administer blocks'), 'admin/people/permissions', array('fragment' => 'module-block')),
+            )),
+        ),
+    );
+}
