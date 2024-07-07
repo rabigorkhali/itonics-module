@@ -144,7 +144,9 @@ function rabigorkhali_itonics_products_form($form, &$form_state)
         '#title' => t('Expiry Date'),
         '#date_format' => 'Y-m-d',
         '#description' => t('Select the expiry date of the ITONICS Product.'),
+        '#showCloseButton' => TRUE,
     );
+
     $form['submit'] = array(
         '#type' => 'submit',
         '#value' => t('Save'),
@@ -395,9 +397,9 @@ function rabigorkhali_itonics_products_edit_form($form, &$form_state)
 
     // Expiry Date datepicker
     $form['rabigorkhali_itonics_products_expiry_date'] = array(
-        '#type' => 'date',
+        '#type' => 'date_popup',
         '#title' => t('Expiry Date'),
-        '#default_value' => date('Y-m-d', $record->expiry_date), // Assuming expiry_date is stored as Unix timestamp
+        '#default_value' => $record->expiry_date??date('Y-m-d'), // Convert Unix timestamp to date format
         '#required' => TRUE,
         '#description' => t('Date when the Itonics Product expires.'),
     );
