@@ -490,16 +490,12 @@ function rabigorkhali_itonics_products_edit_submit_handler($form, &$form_state)
         $rabigorkhali_itonics_products_category = $form_state['values']['rabigorkhali_itonics_products_category'];
         $rabigorkhali_itonics_products_type = $form_state['values']['rabigorkhali_itonics_products_type'];
         $rabigorkhali_itonics_products_owner_email = $form_state['values']['rabigorkhali_itonics_products_owner_email'];
-        $rabigorkhali_itonics_products_expiry_date = !empty($form_state['values']['rabigorkhali_itonics_products_expiry_date']) ? strtotime($form_state['values']['rabigorkhali_itonics_products_expiry_date']) : NULL;
+        $rabigorkhali_itonics_products_expiry_date = $form_state['values']['rabigorkhali_itonics_products_expiry_date'];
 
         // Check if expiry date is valid
-        if ($rabigorkhali_itonics_products_expiry_date === FALSE || $rabigorkhali_itonics_products_expiry_date === NULL) {
-            drupal_set_message(t('Error: Invalid expiry date format.'), 'error');
-            // return;
-        }
 
         // Format the expiry date for database insertion
-        $formatted_expiry_date = date('Y-m-d', $rabigorkhali_itonics_products_expiry_date);
+        $rabigorkhali_itonics_products_expiry_date = sprintf('%04d-%02d-%02d', $rabigorkhali_itonics_products_expiry_date['year'], $rabigorkhali_itonics_products_expiry_date['month'], $rabigorkhali_itonics_products_expiry_date['day']);
 
         // Update data array
         $data = array(
@@ -509,7 +505,7 @@ function rabigorkhali_itonics_products_edit_submit_handler($form, &$form_state)
             'category' => serialize($rabigorkhali_itonics_products_category), // Serialize for multiple values
             'type' => $rabigorkhali_itonics_products_type,
             'owner_email' => $rabigorkhali_itonics_products_owner_email,
-            'expiry_date' => $formatted_expiry_date,
+            'expiry_date' => $rabigorkhali_itonics_products_expiry_date,
         );
 
         // Handle image update if file is uploaded
