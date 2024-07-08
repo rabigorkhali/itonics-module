@@ -184,45 +184,43 @@ function rabigorkhali_itonics_products_submit_handler($form, &$form_state)
         $rabigorkhali_itonics_products_title = $form_state['values']['rabigorkhali_itonics_products_title'];
         $rabigorkhali_itonics_products_description = $form_state['values']['rabigorkhali_itonics_products_description']['value']; // Extract the value from the text_format element
         $rabigorkhali_itonics_products_summary = $form_state['values']['rabigorkhali_itonics_products_summary'];
-        $rabigorkhali_itonics_products_category = implode(', ', array_keys($form_state['values']['rabigorkhali_itonics_products_category'])); // Convert array to comma-separated string
+        $rabigorkhali_itonics_products_category = $form_state['values']['rabigorkhali_itonics_products_category'];
         $rabigorkhali_itonics_products_type = $form_state['values']['rabigorkhali_itonics_products_type'];
         $rabigorkhali_itonics_products_owner_email = $form_state['values']['rabigorkhali_itonics_products_owner_email'];
-
+        $rabigorkhali_itonics_products_expiry_date = $form_state['values']['rabigorkhali_itonics_products_expiry_date'];
         // Insert into the database
         $nid = db_insert('rabigorkhali_itonics_products')
             ->fields(array(
                 'title' => $rabigorkhali_itonics_products_title,
                 'description' => $rabigorkhali_itonics_products_description,
                 'summary' => $rabigorkhali_itonics_products_summary,
-                'category' => $rabigorkhali_itonics_products_category,
+                'category' => serialize($rabigorkhali_itonics_products_category),
                 'type' => $rabigorkhali_itonics_products_type,
                 'owner_email' => $rabigorkhali_itonics_products_owner_email,
-                'image' => $fid, // Assuming 'image_fid' is the column name for storing file IDs
+                'expiry_date' => $rabigorkhali_itonics_products_expiry_date,
+                'image' => $fid,
             ))
             ->execute();
         drupal_set_message(t('Record has been added!'));
     }
 }
 
-/* pass data to edit form */
+/* pass data to list page */
 function rabigorkhali_itonics_products_sort_with_pager_content()
 {
     $header = array(
-        array('data' => t('Custom id'), 'field' => 'id', 'sort' => 'asc'),
+        array('data' => t('SN'), 'field'=>'id','sort' => 'asc'),
         array('data' => t('Title'), 'field' => 'title'),
-        array('data' => t('Description'), 'field' => 'description'),
-        array('data' => t('Summary'), 'field' => 'summary'),
         array('data' => t('Category'), 'field' => 'category'),
         array('data' => t('Type'), 'field' => 'type'),
         array('data' => t('Owner Email'), 'field' => 'owner_email'),
         array('data' => t('Expiry Date'), 'field' => 'expiry_date'),
         array('data' => t('Image'), 'field' => 'image'),
-        array('data' => t('Status'), 'field' => 'status'),
         array('data' => t('Action')),
     );
 
     $query = db_select('rabigorkhali_itonics_products', 'c');
-    $query->fields('c', array('id', 'title', 'description', 'summary', 'category', 'type', 'owner_email', 'expiry_date', 'image', 'status'));
+    $query->fields('c', array('id', 'title', 'description', 'summary', 'category', 'type', 'owner_email', 'expiry_date', 'image'));
 
     $table_sort = $query->extend('TableSort') // Add table sort extender.
         ->orderByHeader($header); // Add order by headers.
@@ -231,6 +229,7 @@ function rabigorkhali_itonics_products_sort_with_pager_content()
     $result = $pager->execute();
 
     $rows = array();
+    $incr = 1;
     foreach ($result as $res) {
         // Prepare image output
         $image_output = '';
@@ -246,19 +245,17 @@ function rabigorkhali_itonics_products_sort_with_pager_content()
 
         $rows[] = array(
             'data' => array(
-                $res->id,
+                $incr,
                 $res->title,
-                $res->description,
-                $res->summary,
-                $res->category,
+                implode(',', array_keys(unserialize($res->category))),
                 $res->type,
                 $res->owner_email,
-                date('Y-m-d', $res->expiry_date), // Assuming expiry_date is stored as Unix timestamp
+                $res->expiry_date,
                 $image_output,
-                $res->status,
                 l('Edit', 'admin/itonics/products/' . $res->id . '/edit') . ' | ' . l('Delete', 'admin/itonics/products/' . $res->id . '/delete')
             )
         );
+        $incr++;
     }
 
     // If rows are not empty theme and display the rows.
@@ -399,7 +396,7 @@ function rabigorkhali_itonics_products_edit_form($form, &$form_state)
     $form['rabigorkhali_itonics_products_expiry_date'] = array(
         '#type' => 'date_popup',
         '#title' => t('Expiry Date'),
-        '#default_value' => $record->expiry_date??date('Y-m-d'), // Convert Unix timestamp to date format
+        '#default_value' => $record->expiry_date ?? date('Y-m-d'), // Convert Unix timestamp to date format
         '#required' => TRUE,
         '#description' => t('Date when the Itonics Product expires.'),
     );
@@ -440,14 +437,6 @@ function rabigorkhali_itonics_products_edit_form($form, &$form_state)
     $form['id'] = array(
         '#type' => 'hidden',
         '#value' => $id,
-    );
-
-    // Checkbox for status
-    $form['rabigorkhali_itonics_products_status'] = array(
-        '#type' => 'checkbox',
-        '#title' => t('Status'),
-        '#default_value' => $record->status,
-        '#description' => t('Indicates whether the Itonics Product is active or inactive.'),
     );
 
     // Submit button
@@ -493,12 +482,9 @@ function rabigorkhali_itonics_products_edit_submit_handler($form, &$form_state)
         $rabigorkhali_itonics_products_type = $form_state['values']['rabigorkhali_itonics_products_type'];
         $rabigorkhali_itonics_products_owner_email = $form_state['values']['rabigorkhali_itonics_products_owner_email'];
         $rabigorkhali_itonics_products_expiry_date = $form_state['values']['rabigorkhali_itonics_products_expiry_date'];
-
         // Check if expiry date is valid
 
         // Format the expiry date for database insertion
-        $rabigorkhali_itonics_products_expiry_date = sprintf('%04d-%02d-%02d', $rabigorkhali_itonics_products_expiry_date['year'], $rabigorkhali_itonics_products_expiry_date['month'], $rabigorkhali_itonics_products_expiry_date['day']);
-
         // Update data array
         $data = array(
             'title' => $rabigorkhali_itonics_products_title,
