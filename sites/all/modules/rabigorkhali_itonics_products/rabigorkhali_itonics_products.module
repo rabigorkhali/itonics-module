@@ -152,7 +152,7 @@ function rabigorkhali_itonics_products_submit_handler($form, &$form_state)
             $fid = 0;
         }
         $rabigorkhali_itonics_products_title = $form_state['values']['rabigorkhali_itonics_products_title'];
-        $rabigorkhali_itonics_products_description = $form_state['values']['rabigorkhali_itonics_products_description']['value']; // Extract the value from the text_format element
+        $rabigorkhali_itonics_products_description = serialize($form_state['values']['rabigorkhali_itonics_products_description']); // Extract the value from the text_format element
         $rabigorkhali_itonics_products_summary = $form_state['values']['rabigorkhali_itonics_products_summary'];
         $rabigorkhali_itonics_products_category = $form_state['values']['rabigorkhali_itonics_products_category'];
         $rabigorkhali_itonics_products_type = $form_state['values']['rabigorkhali_itonics_products_type'];
@@ -283,10 +283,10 @@ function rabigorkhali_itonics_products_edit_form($form, &$form_state)
     $form['rabigorkhali_itonics_products_description'] = array(
         '#type' => 'text_format',
         '#title' => t('Description'),
-        '#format' => 'full_html',
+        '#format' => unserialize($record->description)['format'],
         '#rows' => 10,
         '#columns' => 40,
-        '#default_value' => $record->description,
+        '#default_value' => unserialize($record->description)['value'],
         '#required' => TRUE,
         '#description' => t('The text of Itonics Products.'),
     );
@@ -416,7 +416,7 @@ function rabigorkhali_itonics_products_edit_submit_handler($form, &$form_state)
     if (!$error) {
         $id = $form_state['values']['id'];
         $rabigorkhali_itonics_products_title = $form_state['values']['rabigorkhali_itonics_products_title'];
-        $rabigorkhali_itonics_products_description = $form_state['values']['rabigorkhali_itonics_products_description'];
+        $rabigorkhali_itonics_products_description = serialize($form_state['values']['rabigorkhali_itonics_products_description']);
         $rabigorkhali_itonics_products_summary = $form_state['values']['rabigorkhali_itonics_products_summary'];
         $rabigorkhali_itonics_products_category = $form_state['values']['rabigorkhali_itonics_products_category'];
         $rabigorkhali_itonics_products_type = $form_state['values']['rabigorkhali_itonics_products_type'];
