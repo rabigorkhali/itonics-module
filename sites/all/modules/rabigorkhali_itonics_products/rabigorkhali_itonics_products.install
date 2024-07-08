@@ -1,69 +1,23 @@
 <?php
-
-/** 
- * @file
- * Schema definitions install/update/uninstall hooks.
- */
-/** 
+/**
  * Implements hook_schema().
  */
-function rabigorkhali_itonics_products_schema()
-{
-    $schema['rabigorkhali_itonics_products'] = array(
-        'description' => 'The base table for rabigorkhali_itonics_products.',
-        'fields' => array(
-            'id' => array(
-                'type' => 'serial',
-                'unsigned' => TRUE,
-                'not null' => TRUE,
-            ),
-            'title' => array(
-                'type' => 'varchar',
-                'length' => 255,
-                'not null' => TRUE,
-            ),
-            'image' => array(
-                'type' => 'varchar',
-                'length' => 255,
-                'not null' => FALSE,
-            ),
-            'summary' => array(
-                'type' => 'text',
-                'not null' => FALSE,
-            ),
-            'description' => array(
-                'type' => 'text',
-                'not null' => FALSE,
-            ),
-            'category' => array(
-                'type' => 'text',
-                'not null' => FALSE,
-            ),
-            'type' => array(
-                'type' => 'varchar',
-                'length' => 255,
-                'not null' => TRUE,
-            ),
-            'owner_email' => array(
-                'type' => 'varchar',
-                'length' => 255,
-                'not null' => TRUE,
-            ),
-            'expiry_date' => array(
-                'type' => 'datetime',
-                'not null' => FALSE,
-            ),
-        ),
-        'primary key' => array('id'),
-    );
-    return $schema;
-}
+function rabigorkhali_itonics_products_install() {
+    // Define the SQL query to create the table.
+    $query = "
+        CREATE TABLE IF NOT EXISTS {rabigorkhali_itonics_products} (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            title VARCHAR(255) NOT NULL,
+            image VARCHAR(255) DEFAULT NULL,
+            summary TEXT,
+            description TEXT,
+            category TEXT,
+            type VARCHAR(255) NOT NULL,
+            owner_email VARCHAR(255) NOT NULL,
+            expiry_date DATETIME DEFAULT NULL
+        );
+    ";
 
-/**
- * Add the rabigorkhali_itonics_products table for the rabigorkhali_itonics_products module.
- */
-function rabigorkhali_itonics_products_update_7001()
-{
-    db_create_table('rabigorkhali_itonics_products', drupal_get_schema_unprocessed('rabigorkhali_itonics_products', 'rabigorkhali_itonics_products'));
-    return 'Add the rabigorkhali_itonics_products table for the rabigorkhali_itonics_products module.';
+    // Execute the query.
+    db_query($query);
 }

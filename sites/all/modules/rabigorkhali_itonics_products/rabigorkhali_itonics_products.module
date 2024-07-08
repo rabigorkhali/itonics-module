@@ -75,6 +75,72 @@ function rabigorkhali_itonics_products_menu()
     return $items;
 }
 
+
+function rabigorkhali_itonics_products_sort_with_pager_content()
+{
+    $header = array(
+        array('data' => t('SN'), 'field' => 'id', 'sort' => 'asc'),
+        array('data' => t('Title'), 'field' => 'title'),
+        array('data' => t('Category'), 'field' => 'category'),
+        array('data' => t('Type'), 'field' => 'type'),
+        array('data' => t('Owner Email'), 'field' => 'owner_email'),
+        array('data' => t('Expiry Date'), 'field' => 'expiry_date'),
+        array('data' => t('Image'), 'field' => 'image'),
+        array('data' => t('Action')),
+    );
+
+    $query = db_select('rabigorkhali_itonics_products', 'c');
+    $query->fields('c', array('id', 'title', 'description', 'summary', 'category', 'type', 'owner_email', 'expiry_date', 'image'));
+
+    $table_sort = $query->extend('TableSort')
+        ->orderByHeader($header);
+    $pager = $table_sort->extend('PagerDefault')
+        ->limit(5);
+    $result = $pager->execute();
+
+    $rows = array();
+    $incr = 1;
+    foreach ($result as $res) {
+        $image_output = '';
+        if (!empty($res->image)) {
+            $file = file_load($res->image);
+            $image_output = theme(
+                'image_style',
+                array(
+                    'style_name' => 'thumbnail', // Adjust image style as needed
+                    'path' => $file->uri,
+                    'alt' => $file->filename,
+                    'title' => $file->filename,
+                )
+            );
+        }
+
+        $rows[] = array(
+            'data' => array(
+                $incr,
+                $res->title,
+                formatCategories($res->category),
+                ucfirst(str_replace('_', ' ', $res->type)),
+                $res->owner_email,
+                $res->expiry_date,
+                $image_output,
+                l('View', 'admin/itonics/products/' . $res->id) . ' | ' . l('Edit', 'admin/itonics/products/' . $res->id . '/edit') . ' | ' . l('Delete', 'admin/itonics/products/' . $res->id . '/delete')
+            )
+        );
+        $incr++;
+    }
+
+    if (!empty($rows)) {
+        $output = theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('id' => 'sort-table')));
+        $output .= theme('pager');
+    } else {
+        $output = t("No results found.");
+    }
+
+    $output .= l(t('Add new record'), 'admin/itonics/products/add', array('attributes' => array('class' => array('button'))));
+
+    return $output;
+}
 function rabigorkhali_itonics_products_view($product_id)
 {
     $product = rabigorkhali_itonics_products_load($product_id);
@@ -132,9 +198,6 @@ function rabigorkhali_itonics_products_view($product_id)
 }
 
 
-/**
- * Load a product by ID.
- */
 function rabigorkhali_itonics_products_load($product_id)
 {
     $query = db_select('rabigorkhali_itonics_products', 'p')
@@ -231,6 +294,7 @@ function rabigorkhali_itonics_products_form($form, &$form_state)
         '#description' => t('Select the expiry date of the ITONICS Product.'),
         '#showCloseButton' => TRUE,
         '#weight' => 7,
+        '#title_display' => 'invisible', // This hides the suffix ' Date' from the label.
     );
     $form['submit'] = array(
         '#type' => 'submit',
@@ -288,71 +352,6 @@ function rabigorkhali_itonics_products_submit_handler($form, &$form_state)
     }
 }
 
-function rabigorkhali_itonics_products_sort_with_pager_content()
-{
-    $header = array(
-        array('data' => t('SN'), 'field' => 'id', 'sort' => 'asc'),
-        array('data' => t('Title'), 'field' => 'title'),
-        array('data' => t('Category'), 'field' => 'category'),
-        array('data' => t('Type'), 'field' => 'type'),
-        array('data' => t('Owner Email'), 'field' => 'owner_email'),
-        array('data' => t('Expiry Date'), 'field' => 'expiry_date'),
-        array('data' => t('Image'), 'field' => 'image'),
-        array('data' => t('Action')),
-    );
-
-    $query = db_select('rabigorkhali_itonics_products', 'c');
-    $query->fields('c', array('id', 'title', 'description', 'summary', 'category', 'type', 'owner_email', 'expiry_date', 'image'));
-
-    $table_sort = $query->extend('TableSort')
-        ->orderByHeader($header);
-    $pager = $table_sort->extend('PagerDefault')
-        ->limit(5);
-    $result = $pager->execute();
-
-    $rows = array();
-    $incr = 1;
-    foreach ($result as $res) {
-        $image_output = '';
-        if (!empty($res->image)) {
-            $file = file_load($res->image);
-            $image_output = theme(
-                'image_style',
-                array(
-                    'style_name' => 'thumbnail', // Adjust image style as needed
-                    'path' => $file->uri,
-                    'alt' => $file->filename,
-                    'title' => $file->filename,
-                )
-            );
-        }
-
-        $rows[] = array(
-            'data' => array(
-                $incr,
-                $res->title,
-                formatCategories($res->category),
-                ucfirst(str_replace('_', ' ', $res->type)),
-                $res->owner_email,
-                $res->expiry_date,
-                $image_output,
-                l('View', 'admin/itonics/products/' . $res->id) . ' | ' . l('Edit', 'admin/itonics/products/' . $res->id . '/edit') . ' | ' . l('Delete', 'admin/itonics/products/' . $res->id . '/delete')
-            )
-        );
-        $incr++;
-    }
-
-    if (!empty($rows)) {
-        $output = theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('id' => 'sort-table')));
-        $output .= theme('pager');
-    } else {
-        $output = t("No results found.");
-    }
-
-    $output .= l(t('Add new record'), 'admin/itonics/products/add', array('attributes' => array('class' => array('button'))));
-
-    return $output;
-}
 
 function rabigorkhali_itonics_products_delete()
 {
@@ -485,11 +484,13 @@ function rabigorkhali_itonics_products_edit_form($form, &$form_state)
 
     $form['rabigorkhali_itonics_products_expiry_date'] = array(
         '#type' => 'date_popup',
+        '#date_format' => 'Y-m-d',
         '#title' => t('Expiry Date'),
         '#default_value' => $record->expiry_date ?? date('Y-m-d'),
         '#required' => TRUE,
         '#description' => t('Select the expiry date of the ITONICS Product.'),
         '#weight' => 9,
+        '#title_display' => 'invisible', // This hides the suffix ' Date' from the label.
     );
 
     // Hidden ID field
