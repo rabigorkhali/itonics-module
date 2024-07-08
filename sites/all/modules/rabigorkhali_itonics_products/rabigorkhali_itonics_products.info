@@ -1,0 +1,10 @@
+name = RabiGorkhali ITONICS Products
+description = "A module to manage ITONICS products with CRUD functionalities."
+core = 7.x
+package = "Rabi Gorkhali Module"
+configure = admin/itonics/products
+
+version = "7.x-2.0"
+core = "7.x"
+project = "rabigorkhali_itonics_products"
+datestamp = "1385568677"
