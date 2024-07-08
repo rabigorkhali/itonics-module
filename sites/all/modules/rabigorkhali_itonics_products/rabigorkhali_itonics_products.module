@@ -132,6 +132,7 @@ function rabigorkhali_itonics_products_form($form, &$form_state)
     return $form;
 }
 
+
 function rabigorkhali_itonics_products_submit_handler($form, &$form_state)
 {
     $error = 1;
@@ -280,17 +281,18 @@ function rabigorkhali_itonics_products_edit_form($form, &$form_state)
     );
 
     $form['rabigorkhali_itonics_products_description'] = array(
-        '#type' => 'textarea',
+        '#type' => 'text_format',
+        '#title' => t('Description'),
+        '#format' => 'full_html',
         '#rows' => 10,
         '#columns' => 40,
-        '#title' => t('Description'),
         '#default_value' => $record->description,
         '#required' => TRUE,
         '#description' => t('The text of Itonics Products.'),
     );
 
     $form['rabigorkhali_itonics_products_summary'] = array(
-        '#type' => 'textfield',
+        '#type' => 'textarea',
         '#title' => t('Summary'),
         '#default_value' => $record->summary,
         '#description' => t('A summary of the Itonics Product.'),
