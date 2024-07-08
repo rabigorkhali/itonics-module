@@ -1,4 +1,32 @@
 <?php
+function getCategories()
+{
+    $categories = array(
+        'category_1' => 'Category 1',
+        'category_2' => 'Category 2',
+        'category_3' => 'Category 3',
+    );
+    return $categories;
+}
+
+function getTypes()
+{
+    $types = array(
+        'type_1' => 'Type 1',
+        'type_2' => 'Type 2',
+        'type_3' => 'Type 3',
+    );
+    return $types;
+}
+
+function formatCategories($category)
+{
+    $categories = array_map(function($category) {
+        return ucfirst(str_replace('_', ' ', $category));
+    }, array_keys(unserialize($category)));
+    
+    return implode(',', $categories);
+}
 
 function rabigorkhali_itonics_products_menu()
 {
@@ -51,7 +79,8 @@ function rabigorkhali_itonics_products_block_view($block_name = "")
     return $block;
 }
 
-function rabigorkhali_itonics_products_form($form, &$form_state) {
+function rabigorkhali_itonics_products_form($form, &$form_state)
+{
     $form['rabigorkhali_itonics_products_title'] = array(
         '#type' => 'textfield',
         '#title' => t('Title'),
@@ -85,11 +114,7 @@ function rabigorkhali_itonics_products_form($form, &$form_state) {
     $form['rabigorkhali_itonics_products_category'] = array(
         '#type' => 'select',
         '#title' => t('Category'),
-        '#options' => array(
-            'Category 1' => 'Category 1',
-            'Category 2' => 'Category 2',
-            'Category 3' => 'Category 3',
-        ),
+        '#options' => getCategories(),
         '#multiple' => TRUE,
         '#required' => TRUE,
         '#description' => t('Select one or more categories for the ITONICS Product.'),
@@ -98,11 +123,7 @@ function rabigorkhali_itonics_products_form($form, &$form_state) {
     $form['rabigorkhali_itonics_products_type'] = array(
         '#type' => 'radios',
         '#title' => t('Type'),
-        '#options' => array(
-            'Type 1' => 'Type 1',
-            'Type 2' => 'Type 2',
-            'Type 3' => 'Type 3',
-        ),
+        '#options' => getTypes(),
         '#required' => TRUE,
         '#description' => t('Select the type of the ITONICS Product.'),
         '#weight' => 5,
@@ -144,10 +165,13 @@ function rabigorkhali_itonics_products_submit_handler($form, &$form_state)
     }
 
     if ($error) {
-        $file = file_save_upload('rabigorkhali_itonics_products_image', array(
-            'file_validate_is_image' => array(),
-            'file_validate_extensions' => array('png gif jpg jpeg'),
-        ));
+        $file = file_save_upload(
+            'rabigorkhali_itonics_products_image',
+            array(
+                'file_validate_is_image' => array(),
+                'file_validate_extensions' => array('png gif jpg jpeg'),
+            )
+        );
 
         if ($file) {
             $fid = $file->fid;/* FILE UPLOAD SUCCESSFUL */
@@ -162,16 +186,18 @@ function rabigorkhali_itonics_products_submit_handler($form, &$form_state)
         $rabigorkhali_itonics_products_owner_email = $form_state['values']['rabigorkhali_itonics_products_owner_email'];
         $rabigorkhali_itonics_products_expiry_date = $form_state['values']['rabigorkhali_itonics_products_expiry_date'];
         $nid = db_insert('rabigorkhali_itonics_products')
-            ->fields(array(
-                'title' => $rabigorkhali_itonics_products_title,
-                'description' => $rabigorkhali_itonics_products_description,
-                'summary' => $rabigorkhali_itonics_products_summary,
-                'category' => serialize($rabigorkhali_itonics_products_category),
-                'type' => $rabigorkhali_itonics_products_type,
-                'owner_email' => $rabigorkhali_itonics_products_owner_email,
-                'expiry_date' => $rabigorkhali_itonics_products_expiry_date,
-                'image' => $fid,
-            ))
+            ->fields(
+                array(
+                    'title' => $rabigorkhali_itonics_products_title,
+                    'description' => $rabigorkhali_itonics_products_description,
+                    'summary' => $rabigorkhali_itonics_products_summary,
+                    'category' => serialize($rabigorkhali_itonics_products_category),
+                    'type' => $rabigorkhali_itonics_products_type,
+                    'owner_email' => $rabigorkhali_itonics_products_owner_email,
+                    'expiry_date' => $rabigorkhali_itonics_products_expiry_date,
+                    'image' => $fid,
+                )
+            )
             ->execute();
         drupal_set_message(t('Record has been added!'));
     }
@@ -180,7 +206,7 @@ function rabigorkhali_itonics_products_submit_handler($form, &$form_state)
 function rabigorkhali_itonics_products_sort_with_pager_content()
 {
     $header = array(
-        array('data' => t('SN'), 'field'=>'id','sort' => 'asc'),
+        array('data' => t('SN'), 'field' => 'id', 'sort' => 'asc'),
         array('data' => t('Title'), 'field' => 'title'),
         array('data' => t('Category'), 'field' => 'category'),
         array('data' => t('Type'), 'field' => 'type'),
@@ -205,20 +231,23 @@ function rabigorkhali_itonics_products_sort_with_pager_content()
         $image_output = '';
         if (!empty($res->image)) {
             $file = file_load($res->image);
-            $image_output = theme('image_style', array(
-                'style_name' => 'thumbnail', // Adjust image style as needed
-                'path' => $file->uri,
-                'alt' => $file->filename,
-                'title' => $file->filename,
-            ));
+            $image_output = theme(
+                'image_style',
+                array(
+                    'style_name' => 'thumbnail', // Adjust image style as needed
+                    'path' => $file->uri,
+                    'alt' => $file->filename,
+                    'title' => $file->filename,
+                )
+            );
         }
 
         $rows[] = array(
             'data' => array(
                 $incr,
                 $res->title,
-                implode(',', array_keys(unserialize($res->category))),
-                $res->type,
+                formatCategories($res->category),
+                ucfirst(str_replace('_', ' ', $res->type)),
                 $res->owner_email,
                 $res->expiry_date,
                 $image_output,
@@ -295,12 +324,15 @@ function rabigorkhali_itonics_products_edit_form($form, &$form_state)
     // Display current image if exists
     if (!empty($record->image)) {
         $file = file_load($record->image);
-        $image_output = theme('image_style', array(
-            'style_name' => 'thumbnail', // Adjust image style as needed
-            'path' => $file->uri,
-            'alt' => $file->filename,
-            'title' => $file->filename,
-        ));
+        $image_output = theme(
+            'image_style',
+            array(
+                'style_name' => 'thumbnail', // Adjust image style as needed
+                'path' => $file->uri,
+                'alt' => $file->filename,
+                'title' => $file->filename,
+            )
+        );
         $form['current_image'] = array(
             '#markup' => $image_output,
             '#prefix' => '<div id="current-image">',
@@ -338,32 +370,22 @@ function rabigorkhali_itonics_products_edit_form($form, &$form_state)
         '#weight' => 5,
     );
 
-    $categories = array(
-        'Category 1' => 'Category 1',
-        'Category 2' => 'Category 2',
-        'Category 3' => 'Category 3',
-    );
     $form['rabigorkhali_itonics_products_category'] = array(
         '#type' => 'select',
         '#title' => t('Category'),
         '#default_value' => $record->category ? unserialize($record->category) : array(),
-        '#options' => $categories,
+        '#options' => getCategories(),
         '#multiple' => TRUE,
         '#required' => TRUE,
         '#description' => t('Select one or more categories for the ITONICS Product.'),
         '#weight' => 6,
     );
 
-    $types = array(
-        'Type 1' => 'Type 1',
-        'Type 2' => 'Type 2',
-        'Type 3' => 'Type 3',
-    );
     $form['rabigorkhali_itonics_products_type'] = array(
         '#type' => 'radios',
         '#title' => t('Type'),
         '#default_value' => $record->type,
-        '#options' => $types,
+        '#options' => getTypes(),
         '#required' => TRUE,
         '#description' => t('Select the type of the ITONICS Product.'),
         '#weight' => 7,
@@ -445,10 +467,13 @@ function rabigorkhali_itonics_products_edit_submit_handler($form, &$form_state)
 
         // Handle image update if file is uploaded
         if (!empty($form['rabigorkhali_itonics_products_image'])) {
-            $file = file_save_upload('rabigorkhali_itonics_products_image', array(
-                'file_validate_is_image' => array(), // Ensure it's an image file
-                'file_validate_extensions' => array('png gif jpg jpeg'), // Allowed file types
-            ));
+            $file = file_save_upload(
+                'rabigorkhali_itonics_products_image',
+                array(
+                    'file_validate_is_image' => array(), // Ensure it's an image file
+                    'file_validate_extensions' => array('png gif jpg jpeg'), // Allowed file types
+                )
+            );
 
             if ($file) {
                 // Save the file
@@ -464,10 +489,13 @@ function rabigorkhali_itonics_products_edit_submit_handler($form, &$form_state)
             }
         }
         if (!empty($form_state['values']['rabigorkhali_itonics_products_image'])) {
-            $file = file_save_upload('rabigorkhali_itonics_products_image', array(
-                'file_validate_is_image' => array(), // Ensure it's an image file
-                'file_validate_extensions' => array('png gif jpg jpeg'), // Allowed file types
-            ));
+            $file = file_save_upload(
+                'rabigorkhali_itonics_products_image',
+                array(
+                    'file_validate_is_image' => array(), // Ensure it's an image file
+                    'file_validate_extensions' => array('png gif jpg jpeg'), // Allowed file types
+                )
+            );
 
             if ($file) {
                 // Save the file
@@ -512,9 +540,12 @@ function rabigorkhali_itonics_products_permission()
     return array(
         'access rabigorkhali_itonics_products' => array(
             'title' => t('View Itonics Products'),
-            'description' => t('Customizing the Itonics Products requires the !permission-name permission.', array(
-                '!permission-name' => l(t('Administer blocks'), 'admin/people/permissions', array('fragment' => 'module-block')),
-            )),
+            'description' => t(
+                'Customizing the Itonics Products requires the !permission-name permission.',
+                array(
+                    '!permission-name' => l(t('Administer blocks'), 'admin/people/permissions', array('fragment' => 'module-block')),
+                )
+            ),
         ),
     );
 }
