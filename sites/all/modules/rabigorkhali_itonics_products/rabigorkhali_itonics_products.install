@@ -50,8 +50,7 @@ function rabigorkhali_itonics_products_schema()
                 'not null' => TRUE,
             ),
             'expiry_date' => array(
-                'type' => 'int',
-                'unsigned' => TRUE,
+                'type' => 'datetime',
                 'not null' => FALSE,
             ),
         ),
