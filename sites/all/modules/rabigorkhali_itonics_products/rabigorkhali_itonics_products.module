@@ -75,63 +75,41 @@ function rabigorkhali_itonics_products_menu()
     return $items;
 }
 
-/**
- * Page callback for viewing a single product.
- */
-/**
- * Callback function to display the product detail page.
- */
 function rabigorkhali_itonics_products_view($product_id)
 {
     $product = rabigorkhali_itonics_products_load($product_id);
     if (!$product) {
         return drupal_not_found();
     }
-
     $output = array();
-
-    // Product Title.
     $output[] = array(
         '#type' => 'markup',
         '#markup' => '<p>Title:' . check_plain($product->title) . '</p>',
     );
-
-
-
-    // Product Summary.
     $output[] = array(
         '#type' => 'markup',
         '#markup' => '<p>summary:' . check_plain($product->summary) . '</p>',
     );
-
     $output[] = array(
         '#type' => 'markup',
         '#markup' => '<div>Description:' . unserialize($product->description)['value'] . '</div>',
     );
-
     $output[] = array(
         '#type' => 'markup',
         '#markup' => '<p>Category: ' . check_plain(formatCategories($product->category)) . '</p>',
     );
-
-
     $output[] = array(
         '#type' => 'markup',
         '#markup' => '<p>Type: ' . check_plain(ucfirst(str_replace('_', ' ', $product->type))) . '</p>',
     );
-
-    // Product Owner Email.
     $output[] = array(
         '#type' => 'markup',
         '#markup' => '<p>Owner Email: ' . check_plain($product->owner_email) . '</p>',
     );
-
-    // Product Expiry Date.
     $output[] = array(
         '#type' => 'markup',
         '#markup' => '<p>Expiry Date: ' . check_plain($product->expiry_date) . '</p>',
     );
-
     $image_output = '';
     if (!empty($product->image)) {
         $file = file_load($product->image);
@@ -145,7 +123,6 @@ function rabigorkhali_itonics_products_view($product_id)
             )
         );
     }
-
     if (!empty($image_output)) {
         $output[] = array(
             '#markup' => $image_output,
@@ -160,7 +137,6 @@ function rabigorkhali_itonics_products_view($product_id)
  */
 function rabigorkhali_itonics_products_load($product_id)
 {
-    // Query the database to load the product (replace this with actual query logic)
     $query = db_select('rabigorkhali_itonics_products', 'p')
         ->fields('p')
         ->condition('id', $product_id)
@@ -221,11 +197,20 @@ function rabigorkhali_itonics_products_form($form, &$form_state)
         '#required' => TRUE,
         '#description' => t('Select one or more categories for the ITONICS Product.'),
         '#weight' => 4,
+        '#attributes' => array(
+            'class' => array('rabigorkhali-itonics-products-category-select'), 
+        ),
+        '#attached' => array(
+            'js' => array(
+                // drupal_get_path('module', 'rabigorkhali_itonics_products') . '/select2-init.js', 
+            ),
+        ),
     );
     $form['rabigorkhali_itonics_products_type'] = array(
         '#type' => 'radios',
         '#title' => t('Type'),
         '#options' => getTypes(),
+        '#default_value' => 'type_1',
         '#required' => TRUE,
         '#description' => t('Select the type of the ITONICS Product.'),
         '#weight' => 5,
@@ -256,8 +241,6 @@ function rabigorkhali_itonics_products_form($form, &$form_state)
 
     return $form;
 }
-
-
 
 function rabigorkhali_itonics_products_submit_handler($form, &$form_state)
 {
@@ -371,8 +354,6 @@ function rabigorkhali_itonics_products_sort_with_pager_content()
     return $output;
 }
 
-
-
 function rabigorkhali_itonics_products_delete()
 {
     $id = arg(3);
@@ -383,10 +364,8 @@ function rabigorkhali_itonics_products_delete()
     drupal_goto("admin/itonics/products/");
 }
 
-
 function rabigorkhali_itonics_products_edit_block_view($block_name = "")
 {
-
     if (drupal_is_front_page()) {
         return NULL;
     }
@@ -533,7 +512,6 @@ function rabigorkhali_itonics_products_edit_form($form, &$form_state)
     return $form;
 }
 
-
 function rabigorkhali_itonics_products_edit_submit_handler($form, &$form_state)
 {
     $error = FALSE;
@@ -650,4 +628,19 @@ function rabigorkhali_itonics_products_permission()
             ),
         ),
     );
+}
+
+function rabigorkhali_itonics_products_init()
+{
+    // drupal_add_js('https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.4/jquery.min.js', array('type' => 'external'));
+
+    // Include Select2 CSS from CDN
+    // drupal_add_css('https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css', array('type' => 'external'));
+
+    // // Include Select2 JS from CDN
+    // drupal_add_js('https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js', array('type' => 'external'));
+
+    // drupal_add_js('https://code.jquery.com/jquery-3.6.0.min.js', array('type' => 'external'));
+    // drupal_add_js(drupal_get_path('module', 'rabigorkhali_itonics_products') . '/js/select2.min.js');
+    // drupal_add_css(drupal_get_path('module', 'rabigorkhali_itonics_products') . '/css/select2.min.css');
 }
