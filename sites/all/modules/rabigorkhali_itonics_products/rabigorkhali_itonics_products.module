@@ -1,16 +1,7 @@
 <?php
 
-/**
- * @file
- * Custom functions for this site.
- */
-
-/**
- * Implements hook_menu().
- */
 function rabigorkhali_itonics_products_menu()
 {
-
     $items['admin/itonics/products/add'] = array(
         'title' => 'Itonics Products',
         'description' => 'View Itonics Products.',
@@ -31,7 +22,7 @@ function rabigorkhali_itonics_products_menu()
     $items['admin/itonics/products/%/delete'] = array(
         'title' => 'Itonics Products',
         'description' => 'View Itonics Products.',
-        'page callback' => 'my_custom_delete',
+        'page callback' => 'rabigorkhali_itonics_products_delete',
         'page argument' => array(3),
         'access arguments' => array('access rabigorkhali_itonics_products'),
         'weight' => -14,
@@ -45,22 +36,14 @@ function rabigorkhali_itonics_products_menu()
         'weight' => -14,
     );
     return $items;
-
-    // return $items;
 }
 
-/**
- * Implements hook_block_view().  
- */
+
 function rabigorkhali_itonics_products_block_view($block_name = "")
 {
-
-    // in my example I show the form only in the front page.
-    // You can show it where you want, obviously
     if (drupal_is_front_page()) {
         return NULL;
     }
-
     $form = drupal_get_form('rabigorkhali_itonics_products_form');
     $block = array(
         'content' => $form,
@@ -70,7 +53,6 @@ function rabigorkhali_itonics_products_block_view($block_name = "")
 
 function rabigorkhali_itonics_products_form($form, &$form_state)
 {
-    // now I add a text field to the form
     $form['rabigorkhali_itonics_products_title'] = array(
         '#type' => 'textfield',
         '#title' => t('Title'),
@@ -92,7 +74,6 @@ function rabigorkhali_itonics_products_form($form, &$form_state)
         '#description' => t('A brief summary of the ITONICS Product.'),
     );
 
-    // Text Format for the Description (using WYSIWYG)
     $form['rabigorkhali_itonics_products_description'] = array(
         '#type' => 'text_format',
         '#title' => t('Description'),
@@ -101,7 +82,6 @@ function rabigorkhali_itonics_products_form($form, &$form_state)
         '#description' => t('The detailed description of the ITONICS Product using rich text formatting.'),
     );
 
-    // Select List for Category (multi-select)
     $form['rabigorkhali_itonics_products_category'] = array(
         '#type' => 'select',
         '#title' => t('Category'),
@@ -115,7 +95,6 @@ function rabigorkhali_itonics_products_form($form, &$form_state)
         '#description' => t('Select one or more categories for the ITONICS Product.'),
     );
 
-    // Radios for Type (single select)
     $form['rabigorkhali_itonics_products_type'] = array(
         '#type' => 'radios',
         '#title' => t('Type'),
@@ -128,7 +107,6 @@ function rabigorkhali_itonics_products_form($form, &$form_state)
         '#description' => t('Select the type of the ITONICS Product.'),
     );
 
-    // Textfield for Owner Email
     $form['rabigorkhali_itonics_products_owner_email'] = array(
         '#type' => 'textfield',
         '#title' => t('Owner Email'),
@@ -138,7 +116,6 @@ function rabigorkhali_itonics_products_form($form, &$form_state)
         '#description' => t('Enter the email address of the product owner.'),
     );
 
-    // Date Popup for Expiry Date
     $form['rabigorkhali_itonics_products_expiry_date'] = array(
         '#type' => 'date_popup',
         '#title' => t('Expiry Date'),
@@ -151,18 +128,12 @@ function rabigorkhali_itonics_products_form($form, &$form_state)
         '#type' => 'submit',
         '#value' => t('Save'),
     );
-    // and now I assign a my function as handler of the submit event
-    // $form['#validate'][] = 'rabigorkhali_itonics_products_submit_handler';
     $form['#submit'][] = 'rabigorkhali_itonics_products_submit_handler';
     return $form;
 }
 
 function rabigorkhali_itonics_products_submit_handler($form, &$form_state)
 {
-    // this function will be executed after the click
-    // event of the user on the “submit” button.
-    // here I only print a message
-    // you can access a database, redirect, or whatever you want, obviously
     $error = 1;
     if (!isset($form_state['values']['rabigorkhali_itonics_products_title']) || !isset($form_state['values']['rabigorkhali_itonics_products_title'])) {
         $error = 0;
@@ -175,11 +146,9 @@ function rabigorkhali_itonics_products_submit_handler($form, &$form_state)
         ));
 
         if ($file) {
-            // File uploaded successfully
-            $fid = $file->fid;
+            $fid = $file->fid;/* FILE UPLOAD SUCCESSFUL */
         } else {
-            // Handle file upload error (if needed)
-            $fid = 0; // Default value or error handling as required
+            $fid = 0;
         }
         $rabigorkhali_itonics_products_title = $form_state['values']['rabigorkhali_itonics_products_title'];
         $rabigorkhali_itonics_products_description = $form_state['values']['rabigorkhali_itonics_products_description']['value']; // Extract the value from the text_format element
@@ -188,7 +157,6 @@ function rabigorkhali_itonics_products_submit_handler($form, &$form_state)
         $rabigorkhali_itonics_products_type = $form_state['values']['rabigorkhali_itonics_products_type'];
         $rabigorkhali_itonics_products_owner_email = $form_state['values']['rabigorkhali_itonics_products_owner_email'];
         $rabigorkhali_itonics_products_expiry_date = $form_state['values']['rabigorkhali_itonics_products_expiry_date'];
-        // Insert into the database
         $nid = db_insert('rabigorkhali_itonics_products')
             ->fields(array(
                 'title' => $rabigorkhali_itonics_products_title,
@@ -205,7 +173,6 @@ function rabigorkhali_itonics_products_submit_handler($form, &$form_state)
     }
 }
 
-/* pass data to list page */
 function rabigorkhali_itonics_products_sort_with_pager_content()
 {
     $header = array(
@@ -222,8 +189,8 @@ function rabigorkhali_itonics_products_sort_with_pager_content()
     $query = db_select('rabigorkhali_itonics_products', 'c');
     $query->fields('c', array('id', 'title', 'description', 'summary', 'category', 'type', 'owner_email', 'expiry_date', 'image'));
 
-    $table_sort = $query->extend('TableSort') // Add table sort extender.
-        ->orderByHeader($header); // Add order by headers.
+    $table_sort = $query->extend('TableSort')
+        ->orderByHeader($header);
     $pager = $table_sort->extend('PagerDefault')
         ->limit(5);
     $result = $pager->execute();
@@ -231,7 +198,6 @@ function rabigorkhali_itonics_products_sort_with_pager_content()
     $rows = array();
     $incr = 1;
     foreach ($result as $res) {
-        // Prepare image output
         $image_output = '';
         if (!empty($res->image)) {
             $file = file_load($res->image);
@@ -258,7 +224,6 @@ function rabigorkhali_itonics_products_sort_with_pager_content()
         $incr++;
     }
 
-    // If rows are not empty theme and display the rows.
     if (!empty($rows)) {
         $output = theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('id' => 'sort-table')));
         $output .= theme('pager');
@@ -266,7 +231,6 @@ function rabigorkhali_itonics_products_sort_with_pager_content()
         $output = t("No results found.");
     }
 
-    // Add new record link
     $output .= l(t('Add new record'), 'admin/itonics/products/add', array('attributes' => array('class' => array('button'))));
 
     return $output;
@@ -274,7 +238,7 @@ function rabigorkhali_itonics_products_sort_with_pager_content()
 
 
 
-function my_custom_delete()
+function rabigorkhali_itonics_products_delete()
 {
     $id = arg(3);
     $num_updated = db_delete('rabigorkhali_itonics_products')
@@ -284,32 +248,21 @@ function my_custom_delete()
     drupal_goto("admin/itonics/products/");
 }
 
-/**
- * Implements hook_block_view().
- */
+
 function rabigorkhali_itonics_products_edit_block_view($block_name = "")
 {
 
-    // in my example I show the form only in the front page.
-    // You can show it where you want, obviously
     if (drupal_is_front_page()) {
         return NULL;
     }
-
     $form = drupal_get_form('rabigorkhali_itonics_products_edit_form');
     $block = array(
-        // 'subject' => t('Subject'),
         'content' => $form,
     );
-    $block['content'][] .= '
-Back to Listing';
+    $block['content'][] .= 'Back to Listing';
     return $block;
 }
 
-/* setting up edit form html and data */
-/**
- * Form builder for editing Itonics Products.
- */
 function rabigorkhali_itonics_products_edit_form($form, &$form_state)
 {
     $id = arg(3);
@@ -326,7 +279,6 @@ function rabigorkhali_itonics_products_edit_form($form, &$form_state)
         '#required' => TRUE,
     );
 
-    // Textarea for the description
     $form['rabigorkhali_itonics_products_description'] = array(
         '#type' => 'textarea',
         '#rows' => 10,
@@ -337,7 +289,6 @@ function rabigorkhali_itonics_products_edit_form($form, &$form_state)
         '#description' => t('The text of Itonics Products.'),
     );
 
-    // Summary field
     $form['rabigorkhali_itonics_products_summary'] = array(
         '#type' => 'textfield',
         '#title' => t('Summary'),
@@ -348,8 +299,6 @@ function rabigorkhali_itonics_products_edit_form($form, &$form_state)
         '#required' => TRUE,
     );
 
-    // Category select list
-    // Example options - replace with your actual category options
     $categories = array(
         'Category 1' => 'Category 1',
         'Category 2' => 'Category 2',
@@ -365,8 +314,6 @@ function rabigorkhali_itonics_products_edit_form($form, &$form_state)
         '#description' => t('Select categories for the Itonics Product.'),
     );
 
-    // Type radio buttons
-    // Example options - replace with your actual type options
     $types = array(
         'Type 1' => 'Type 1',
         'Type 2' => 'Type 2',
@@ -381,7 +328,6 @@ function rabigorkhali_itonics_products_edit_form($form, &$form_state)
         '#description' => t('Select type for the Itonics Product.'),
     );
 
-    // Owner Email textfield
     $form['rabigorkhali_itonics_products_owner_email'] = array(
         '#type' => 'textfield',
         '#title' => t('Owner Email'),
@@ -392,16 +338,14 @@ function rabigorkhali_itonics_products_edit_form($form, &$form_state)
         '#description' => t('Email address of the owner of the Itonics Product.'),
     );
 
-    // Expiry Date datepicker
     $form['rabigorkhali_itonics_products_expiry_date'] = array(
         '#type' => 'date_popup',
         '#title' => t('Expiry Date'),
-        '#default_value' => $record->expiry_date ?? date('Y-m-d'), // Convert Unix timestamp to date format
+        '#default_value' => $record->expiry_date ?? date('Y-m-d'), 
         '#required' => TRUE,
         '#description' => t('Date when the Itonics Product expires.'),
     );
 
-    // Image upload field
     $form['rabigorkhali_itonics_products_image'] = array(
         '#type' => 'file',
         '#title' => t('Product Image'),
@@ -424,7 +368,6 @@ function rabigorkhali_itonics_products_edit_form($form, &$form_state)
             '#suffix' => '</div>',
         );
 
-        // Add checkbox to delete current image
         $form['delete_image'] = array(
             '#type' => 'checkbox',
             '#title' => t('Delete Current Image'),
@@ -454,15 +397,10 @@ function rabigorkhali_itonics_products_edit_form($form, &$form_state)
 
 
 
-/* this function saves the data in db in update action */
 
-/**
- * Submit handler for editing Itonics Products.
- */
 function rabigorkhali_itonics_products_edit_submit_handler($form, &$form_state)
 {
     $error = FALSE;
-    // Check if required fields are set and not empty
     if (
         !isset($form_state['values']['rabigorkhali_itonics_products_title']) || empty($form_state['values']['rabigorkhali_itonics_products_title']) ||
         !isset($form_state['values']['rabigorkhali_itonics_products_description']) || empty($form_state['values']['rabigorkhali_itonics_products_description']) ||
@@ -482,10 +420,7 @@ function rabigorkhali_itonics_products_edit_submit_handler($form, &$form_state)
         $rabigorkhali_itonics_products_type = $form_state['values']['rabigorkhali_itonics_products_type'];
         $rabigorkhali_itonics_products_owner_email = $form_state['values']['rabigorkhali_itonics_products_owner_email'];
         $rabigorkhali_itonics_products_expiry_date = $form_state['values']['rabigorkhali_itonics_products_expiry_date'];
-        // Check if expiry date is valid
 
-        // Format the expiry date for database insertion
-        // Update data array
         $data = array(
             'title' => $rabigorkhali_itonics_products_title,
             'description' => $rabigorkhali_itonics_products_description,
@@ -516,7 +451,6 @@ function rabigorkhali_itonics_products_edit_submit_handler($form, &$form_state)
                 }
             }
         }
-        //delete
         if (!empty($form_state['values']['rabigorkhali_itonics_products_image'])) {
             $file = file_save_upload('rabigorkhali_itonics_products_image', array(
                 'file_validate_is_image' => array(), // Ensure it's an image file
@@ -550,9 +484,6 @@ function rabigorkhali_itonics_products_edit_submit_handler($form, &$form_state)
                 $data['image'] = NULL; // Reset image field in database
             }
         }
-        //end delete
-
-        // Update database
         $num_updated = db_update('rabigorkhali_itonics_products')
             ->fields($data)
             ->condition('id', $id)
@@ -564,18 +495,11 @@ function rabigorkhali_itonics_products_edit_submit_handler($form, &$form_state)
     }
 }
 
-
-/**
- * Implements hook_permission().
- */
 function rabigorkhali_itonics_products_permission()
 {
     return array(
         'access rabigorkhali_itonics_products' => array(
             'title' => t('View Itonics Products'),
-            // Note: We translate the 'Administer blocks' permission string here with
-            // a separate t() call, to make sure it gets the same translation as when
-            // it's in block_permission().
             'description' => t('Customizing the Itonics Products requires the !permission-name permission.', array(
                 '!permission-name' => l(t('Administer blocks'), 'admin/people/permissions', array('fragment' => 'module-block')),
             )),
