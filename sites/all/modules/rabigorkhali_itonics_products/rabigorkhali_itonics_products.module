@@ -21,10 +21,10 @@ function getTypes()
 
 function formatCategories($category)
 {
-    $categories = array_map(function($category) {
+    $categories = array_map(function ($category) {
         return ucfirst(str_replace('_', ' ', $category));
     }, array_keys(unserialize($category)));
-    
+
     return implode(',', $categories);
 }
 
@@ -63,9 +63,111 @@ function rabigorkhali_itonics_products_menu()
         'access arguments' => array('access rabigorkhali_itonics_products'),
         'weight' => -14,
     );
+
+    $items['admin/itonics/products/%'] = array(
+        'title' => 'View Itonics Product',
+        'description' => 'View details of an Itonics Product.',
+        'page callback' => 'rabigorkhali_itonics_products_view',
+        'page arguments' => array(3),
+        'access arguments' => array('access rabigorkhali_itonics_products'),
+        'weight' => -14,
+    );
     return $items;
 }
 
+/**
+ * Page callback for viewing a single product.
+ */
+/**
+ * Callback function to display the product detail page.
+ */
+function rabigorkhali_itonics_products_view($product_id)
+{
+    $product = rabigorkhali_itonics_products_load($product_id);
+    if (!$product) {
+        return drupal_not_found();
+    }
+
+    $output = array();
+
+    // Product Title.
+    $output[] = array(
+        '#type' => 'markup',
+        '#markup' => '<p>Title:' . check_plain($product->title) . '</p>',
+    );
+
+
+
+    // Product Summary.
+    $output[] = array(
+        '#type' => 'markup',
+        '#markup' => '<p>summary:' . check_plain($product->summary) . '</p>',
+    );
+
+    $output[] = array(
+        '#type' => 'markup',
+        '#markup' => '<div>Description:' . unserialize($product->description)['value'] . '</div>',
+    );
+
+    $output[] = array(
+        '#type' => 'markup',
+        '#markup' => '<p>Category: ' . check_plain(formatCategories($product->category)) . '</p>',
+    );
+
+
+    $output[] = array(
+        '#type' => 'markup',
+        '#markup' => '<p>Type: ' . check_plain(ucfirst(str_replace('_', ' ', $product->type))) . '</p>',
+    );
+
+    // Product Owner Email.
+    $output[] = array(
+        '#type' => 'markup',
+        '#markup' => '<p>Owner Email: ' . check_plain($product->owner_email) . '</p>',
+    );
+
+    // Product Expiry Date.
+    $output[] = array(
+        '#type' => 'markup',
+        '#markup' => '<p>Expiry Date: ' . check_plain($product->expiry_date) . '</p>',
+    );
+
+    $image_output = '';
+    if (!empty($product->image)) {
+        $file = file_load($product->image);
+        $image_output = theme(
+            'image_style',
+            array(
+                'style_name' => 'thumbnail', // Adjust image style as needed
+                'path' => $file->uri,
+                'alt' => $file->filename,
+                'title' => $file->filename,
+            )
+        );
+    }
+
+    if (!empty($image_output)) {
+        $output[] = array(
+            '#markup' => $image_output,
+        );
+    }
+    return $output;
+}
+
+
+/**
+ * Load a product by ID.
+ */
+function rabigorkhali_itonics_products_load($product_id)
+{
+    // Query the database to load the product (replace this with actual query logic)
+    $query = db_select('rabigorkhali_itonics_products', 'p')
+        ->fields('p')
+        ->condition('id', $product_id)
+        ->execute();
+
+    return $query->fetchObject();
+}
 
 function rabigorkhali_itonics_products_block_view($block_name = "")
 {
@@ -251,7 +353,7 @@ function rabigorkhali_itonics_products_sort_with_pager_content()
                 $res->owner_email,
                 $res->expiry_date,
                 $image_output,
-                l('Edit', 'admin/itonics/products/' . $res->id . '/edit') . ' | ' . l('Delete', 'admin/itonics/products/' . $res->id . '/delete')
+                l('View', 'admin/itonics/products/' . $res->id) . ' | ' . l('Edit', 'admin/itonics/products/' . $res->id . '/edit') . ' | ' . l('Delete', 'admin/itonics/products/' . $res->id . '/delete')
             )
         );
         $incr++;
